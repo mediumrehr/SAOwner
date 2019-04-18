@@ -8,3 +8,6 @@
 SAOwner/Build/*
 !SAOwner/Build/Makefile
 !SAOwner/Build/makedep.mk
+
+# vscode ignores
+.vscode

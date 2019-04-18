@@ -164,6 +164,7 @@ extern "C" {
 #define AVR_SIMULATOR_UC3          98  //!< Simulator for the AVR UC3 device family.
 #define USER_BOARD                 99  //!< User-reserved board (if any).
 #define DUMMY_BOARD               100  //!< Dummy board to support board-independent applications (e.g. bootloader).
+#define SAOWNER_BOARD             101  //!< Dummy board to support board-independent applications (e.g. bootloader).
 //! @}
 
 /*! \name Extension Boards
@@ -183,6 +184,8 @@ extern "C" {
 #define SECURITY_XPLAINED           12  //!< Xplained ATSHA204 board
 #define USER_EXT_BOARD              99  //!< User-reserved extension board (if any).
 //! @}
+
+#define BOARD SAOWNER_BOARD
 
 #if BOARD == EVK1100
 #  include "evk1100/evk1100.h"
@@ -387,6 +390,8 @@ extern "C" {
 #  include "user_board.h"
 #elif BOARD == DUMMY_BOARD
 #  include "dummy/dummy_board.h"
+#elif BOARD == SAOWNER_BOARD
+#  include "saowner_board/saowner.h"
 #else
 #  error No known Atmel board defined
 #endif

@@ -47,6 +47,7 @@
 #include <asf.h>
 #include <stdio.h>
 #include <string.h>
+#include <saowner_board/saowner.h>
 
 void i2c_read_request_callback(struct i2c_slave_module *const module);
 void i2c_slave_read_complete_callback(struct i2c_slave_module *const module);

@@ -4,7 +4,7 @@
 
 src\ASF\common\utils\interrupt\interrupt_sam_nvic.c
 
-src\ASF\sam0\boards\samd21_xplained_pro\board_init.c
+src\ASF\sam0\boards\saowner_board\board_init.c
 
 src\ASF\sam0\drivers\port\port.c
 
@@ -40,5 +40,5 @@ src\ASF\sam0\utils\cmsis\samd21\source\system_samd21.c
 
 src\ASF\sam0\utils\syscalls\gcc\syscalls.c
 
-src\qs_i2c_slave_callback.c
+src\saowner.c
 

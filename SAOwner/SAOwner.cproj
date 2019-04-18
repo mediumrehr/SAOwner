@@ -49,8 +49,8 @@
           <file path="src/ASF/common/utils/interrupt/interrupt_sam_nvic.c" framework="" version="" source="common/utils/interrupt/interrupt_sam_nvic.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/utils/interrupt/interrupt_sam_nvic.h" framework="" version="" source="common/utils/interrupt/interrupt_sam_nvic.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/utils/parts.h" framework="" version="" source="common/utils/parts.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/boards/samd21_xplained_pro/board_init.c" framework="" version="" source="sam0/boards/samd21_xplained_pro/board_init.c" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/boards/samd21_xplained_pro/samd21_xplained_pro.h" framework="" version="" source="sam0/boards/samd21_xplained_pro/samd21_xplained_pro.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/boards/saowner_board/board_init.c" framework="" version="" source="sam0/boards/saowner_board/board_init.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/boards/saowner_board/saowner_board.h" framework="" version="" source="sam0/boards/saowner_board/saowner_board.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/port/port.c" framework="" version="" source="sam0/drivers/port/port.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/port/port.h" framework="" version="" source="sam0/drivers/port/port.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/port/quick_start/qs_port_basic.h" framework="" version="" source="sam0/drivers/port/quick_start/qs_port_basic.h" changed="False" content-id="Atmel.ASF" />
@@ -60,10 +60,10 @@
           <file path="src/ASF/sam0/drivers/sercom/i2c/i2c_slave.h" framework="" version="" source="sam0/drivers/sercom/i2c/i2c_slave.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/i2c/i2c_slave_interrupt.h" framework="" version="" source="sam0/drivers/sercom/i2c/i2c_slave_interrupt.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/i2c/quick_start_slave/qs_i2c_slave_basic_use.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave/qs_i2c_slave_basic_use.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/qs_i2c_slave_callback.c" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/qs_i2c_slave_callback.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/saowner.c" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/saowner.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/i2c/quick_start_slave_callback/qs_i2c_slave_callback.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/qs_i2c_slave_callback.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/config/conf_board.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/samd21_xplained_pro/conf_board.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/config/conf_clocks.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/samd21_xplained_pro/conf_clocks.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/config/conf_board.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/saowner_board/conf_board.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/config/conf_clocks.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_callback/saowner_board/conf_clocks.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/i2c/quick_start_slave_dma/qs_i2c_slave_dma.h" framework="" version="" source="sam0/drivers/sercom/i2c/quick_start_slave_dma/qs_i2c_slave_dma.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/sercom.c" framework="" version="" source="sam0/drivers/sercom/sercom.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/sercom/sercom.h" framework="" version="" source="sam0/drivers/sercom/sercom.h" changed="False" content-id="Atmel.ASF" />
@@ -243,8 +243,8 @@
         <dependencies>
           <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.35.1" />
         </dependencies>
-        <project id="sam0.drivers.sercom.i2c.quick_start_slave_interrupt.samd21_xplained_pro" value="Add" config="" content-id="Atmel.ASF" />
-        <board id="board.samd21_xplained_pro" value="Add" config="" content-id="Atmel.ASF" />
+        <project id="sam0.drivers.sercom.i2c.quick_start_slave_interrupt.saowner_board" value="Add" config="" content-id="Atmel.ASF" />
+        <board id="board.saowner_board" value="Add" config="" content-id="Atmel.ASF" />
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.samice</avrtool>
@@ -300,7 +300,7 @@
   <armgcc.compiler.symbols.DefSymbols>
     <ListValues>
       <Value>NDEBUG</Value>
-      <Value>BOARD=SAMD21_XPLAINED_PRO</Value>
+      <Value>BOARD=SAOWNER_BOARD</Value>
       <Value>__SAMD21J18A__</Value>
       <Value>I2C_SLAVE_CALLBACK_MODE=true</Value>
       <Value>ARM_MATH_CM0PLUS=true</Value>
@@ -310,7 +310,7 @@
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
     <ListValues>
-      <Value>../src/ASF/sam0/boards/samd21_xplained_pro</Value>
+      <Value>../src/ASF/sam0/boards/saowner_board</Value>
       <Value>../src/ASF/sam0/boards</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/include</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/source</Value>
@@ -361,7 +361,7 @@
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd21/gcc/samd21j18a_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
-      <Value>../src/ASF/sam0/boards/samd21_xplained_pro</Value>
+      <Value>../src/ASF/sam0/boards/saowner_board</Value>
       <Value>../src/ASF/sam0/boards</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/include</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/source</Value>
@@ -391,10 +391,10 @@
       <Value>../src/ASF/sam0/drivers/sercom/i2c/i2c_sam0</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAMD21_XPLAINED_PRO -DI2C_SLAVE_CALLBACK_MODE=true -D__SAMD21J18A__ -DUSART_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAOWNER_BOARD -DI2C_SLAVE_CALLBACK_MODE=true -D__SAMD21J18A__ -DUSART_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
-      <Value>../src/ASF/sam0/boards/samd21_xplained_pro</Value>
+      <Value>../src/ASF/sam0/boards/saowner_board</Value>
       <Value>../src/ASF/sam0/boards</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/include</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/source</Value>
@@ -438,7 +438,7 @@
   <armgcc.compiler.symbols.DefSymbols>
     <ListValues>
       <Value>DEBUG</Value>
-      <Value>BOARD=SAMD21_XPLAINED_PRO</Value>
+      <Value>BOARD=SAOWNER_BOARD</Value>
       <Value>__SAMD21J18A__</Value>
       <Value>I2C_SLAVE_CALLBACK_MODE=true</Value>
       <Value>ARM_MATH_CM0PLUS=true</Value>
@@ -448,7 +448,7 @@
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
     <ListValues>
-      <Value>../src/ASF/sam0/boards/samd21_xplained_pro</Value>
+      <Value>../src/ASF/sam0/boards/saowner_board</Value>
       <Value>../src/ASF/sam0/boards</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/include</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/source</Value>
@@ -500,7 +500,7 @@
   <armgcc.linker.miscellaneous.LinkerFlags>-Wl,--entry=Reset_Handler -Wl,--cref -mthumb -T../src/ASF/sam0/utils/linker_scripts/samd21/gcc/samd21j18a_flash.ld</armgcc.linker.miscellaneous.LinkerFlags>
   <armgcc.assembler.general.IncludePaths>
     <ListValues>
-      <Value>../src/ASF/sam0/boards/samd21_xplained_pro</Value>
+      <Value>../src/ASF/sam0/boards/saowner_board</Value>
       <Value>../src/ASF/sam0/boards</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/include</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/source</Value>
@@ -531,10 +531,10 @@
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAMD21_XPLAINED_PRO -DI2C_SLAVE_CALLBACK_MODE=true -D__SAMD21J18A__ -DUSART_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAOWNER_BOARD -DI2C_SLAVE_CALLBACK_MODE=true -D__SAMD21J18A__ -DUSART_CALLBACK_MODE=true -DI2C_MASTER_CALLBACK_MODE=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
-      <Value>../src/ASF/sam0/boards/samd21_xplained_pro</Value>
+      <Value>../src/ASF/sam0/boards/saowner_board</Value>
       <Value>../src/ASF/sam0/boards</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/include</Value>
       <Value>../src/ASF/sam0/utils/cmsis/samd21/source</Value>
@@ -577,7 +577,7 @@
     <Folder Include="src\ASF\common\utils\interrupt\" />
     <Folder Include="src\ASF\sam0\" />
     <Folder Include="src\ASF\sam0\boards\" />
-    <Folder Include="src\ASF\sam0\boards\samd21_xplained_pro\" />
+    <Folder Include="src\ASF\sam0\boards\saowner_board\" />
     <Folder Include="src\ASF\sam0\drivers\" />
     <Folder Include="src\ASF\sam0\drivers\port\" />
     <Folder Include="src\ASF\sam0\drivers\port\quick_start\" />
@@ -976,7 +976,7 @@
     <None Include="src\ASF\sam0\utils\cmsis\samd21\source\system_samd21.h">
       <SubType>compile</SubType>
     </None>
-    <None Include="src\ASF\sam0\boards\samd21_xplained_pro\samd21_xplained_pro.h">
+    <None Include="src\ASF\sam0\boards\saowner_board\saowner_board.h">
       <SubType>compile</SubType>
     </None>
     <None Include="src\ASF\sam0\utils\cmsis\samd21\include\instance\mtb.h">
@@ -1036,7 +1036,7 @@
     <Compile Include="src\ASF\common\utils\interrupt\interrupt_sam_nvic.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\ASF\sam0\boards\samd21_xplained_pro\board_init.c">
+    <Compile Include="src\ASF\sam0\boards\saowner_board\board_init.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\ASF\sam0\drivers\port\port.c">
@@ -1198,7 +1198,7 @@
     <Compile Include="src\ASF\sam0\utils\syscalls\gcc\syscalls.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\qs_i2c_slave_callback.c">
+    <Compile Include="src\saowner.c">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\thirdparty\CMSIS\Lib\GCC\libarm_cortexM0l_math.a">
