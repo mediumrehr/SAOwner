@@ -1,0 +1,10 @@
+# Apple ignores
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# build ignores
+SAOwner/Build/*
+!SAOwner/Build/Makefile
+!SAOwner/Build/makedep.mk
