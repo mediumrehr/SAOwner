@@ -225,6 +225,7 @@ enum status_code i2c_slave_init(
 	module->registered_callback = 0;
 	module->enabled_callback = 0;
 	module->buffer_length = 0;
+	module->buffer_received = 0;
 	module->nack_on_address = config->enable_nack_on_address;
 #endif
 
@@ -257,6 +258,7 @@ void i2c_slave_reset(
 	module->enabled_callback = 0;
 	module->buffer_length = 0;
 	module->buffer_remaining = 0;
+	module->buffer_received = 0;
 	module->buffer = NULL;
 #endif
 

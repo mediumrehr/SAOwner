@@ -94,8 +94,11 @@ static void _i2c_slave_read(
 	/* Read byte from master and put in buffer. */
 	*(module->buffer++) = i2c_hw->DATA.reg;
 
-	/*Decrement remaining buffer length */
+	/* Decrement remaining buffer length */
 	module->buffer_remaining--;
+
+	/* Increment received count */
+	module->buffer_received++;
 }
 
 /**
@@ -204,6 +207,7 @@ enum status_code i2c_slave_read_packet_job(
 	module->buffer_remaining = packet->data_length;
 	module->buffer_length    = packet->data_length;
 	module->status           = STATUS_BUSY;
+	module->buffer_received  = 0; // reset received count
 
 	/* Enable interrupts */
 	SercomI2cs *const i2c_hw = &(module->hw->I2CS);

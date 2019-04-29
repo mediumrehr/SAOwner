@@ -18,7 +18,7 @@ download install file from [segger.com](https://www.segger.com/products/debug-pr
 ## Build
 
 ```
-cd SAOwner/
+cd firmware/SAOwner/
 make -C Build/
 ```
 

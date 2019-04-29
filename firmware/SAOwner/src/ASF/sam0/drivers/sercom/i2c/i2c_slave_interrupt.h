@@ -174,6 +174,7 @@ static inline void i2c_slave_cancel_job(
 	/* Set buffer to 0. */
 	module->buffer_remaining = 0;
 	module->buffer_length = 0;
+	module->buffer_received = 0;
 }
 
 /**

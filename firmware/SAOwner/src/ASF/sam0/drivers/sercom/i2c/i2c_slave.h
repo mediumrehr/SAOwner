@@ -270,6 +270,8 @@ struct i2c_slave_module {
 	 * obtained bytes in read
 	 */
 	uint16_t buffer_remaining;
+	/** Count of most recent bytes received **/
+	uint16_t buffer_received;
 	/** Data buffer for packet write and read */
 	volatile uint8_t *buffer;
 	/** Save direction of request from master. 1 = read, 0 = write. */

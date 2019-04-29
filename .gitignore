@@ -5,9 +5,12 @@
 ._*
 
 # build ignores
-SAOwner/Build/*
-!SAOwner/Build/Makefile
-!SAOwner/Build/makedep.mk
+firmware/SAOwner/Build/*
+!firmware/SAOwner/Build/Makefile
+!firmware/SAOwner/Build/makedep.mk
+
+# jlink ignores
+firmware/SAOwner/jlink.*
 
 # vscode ignores
 .vscode
