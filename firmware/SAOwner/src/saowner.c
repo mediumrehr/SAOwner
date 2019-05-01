@@ -60,6 +60,13 @@ void configure_usart_callbacks(void);
 
 void set_genie_mode(uint8_t new_mode);
 uint8_t set_slave_address(char* newAddr);
+uint8_t set_destination_address(char* newAddr);
+void prompt_user(char* prompt, uint8_t promptLen, char* received, uint8_t maxInputLen);
+
+uint8_t maxCmdLen = 0;
+void (*usart_handler)(uint8_t *, uint8_t);
+void new_slave_handler(uint8_t *newSlaveAddr, uint8_t strLen);
+uint8_t wait_for_user_input(char *inputBuffer, uint8_t bufferLen);
 
 /* i2c packets */
 #define PACKET_BUFFER_SIZE 20
@@ -88,12 +95,14 @@ uint8_t redirect_address = 0x8; // default redirect slave address
 
 uint8_t genie_mode = GENIE_MODE_OFF;
 
-#define UART_MENU_MAIN		0
-#define UART_MENU_MODE		1
-#define UART_MENU_REDIRECT	2
+#define UART_MENU_MAIN				0
+#define UART_MENU_MODE				1
+#define UART_MENU_REDIRECT			2
+#define UART_WAIT_NEW_SLAVE_ADDR	3
 
 uint8_t uart_menu = UART_MENU_MAIN;
 uint8_t uart_show_activity = true;
+uint8_t enable_master_usart_reader = true;
 
 /* Init device instance */
 struct i2c_slave_module i2c_slave_instance;
@@ -223,7 +232,7 @@ void usart_read_callback(struct usart_module *const usart_module)
 {
 	cmd_buffer[cmdLen] = rx_buffer[0];
 	
-	uint8_t send_error[] = "|                           | [x] unrecognized command!\n";
+	char send_error[] = "|                           | [x] unrecognized command!\n";
 
 	if (uart_menu == UART_MENU_MAIN) {
 		switch(cmd_buffer[0]) {
@@ -260,65 +269,133 @@ void usart_read_callback(struct usart_module *const usart_module)
 			case '0':
 				set_genie_mode(GENIE_MODE_OFF);
 				uart_menu = UART_MENU_MAIN;
+				// show uart activity again
+				uart_show_activity = true;
 				break;
 
 			case '1':
-				// set new mode
-				// set_slave_address("0xAB");
+				// set passthrough mode
+				set_slave_address("0xFF"); // passthrough all
 				set_genie_mode(GENIE_MODE_PASSTHROUGH);
 				uart_menu = UART_MENU_MAIN;
+				// show uart activity again
+				uart_show_activity = true;
 				break;
 
 			case '2':
-				// set new mode
-				// redirect address is currently hardcoded
-				// usart_write_buffer_wait(&usart_instance, "Original address (hex addres or all): ");
-				set_genie_mode(GENIE_MODE_REDIRECT);
+				// set redirect mode
+				enable_master_usart_reader = false;
+				// char userPrompt_slaveAddr[] = "Enter slave address (0xFF for any/all): ";
+				// usart_write_buffer_wait(&usart_instance, userPrompt_slaveAddr, sizeof(userPrompt_slaveAddr));
+				// char *userInput_slaveAddr[10] = { 0 };
+				// // prompt_user(userPrompt_slaveAddr, sizeof(userPrompt_slaveAddr), userInput_slaveAddr, sizeof(userInput_slaveAddr) - 1);
+				// uint8_t inputLen = wait_for_user_input(userInput_slaveAddr, 5);
+				// // usart_write_buffer_wait(&usart_instance, "Original address (hex addres or all): ");
+				// // set_genie_mode(GENIE_MODE_REDIRECT);
+				// set_slave_address(userInput_slaveAddr);
+				// uart_menu = UART_WAIT_NEW_SLAVE_ADDR;
+		
+				char userPrompt_slaveAddr[] = "Enter slave address (0xFF for any/all): ";
+				usart_write_buffer_wait(&usart_instance, userPrompt_slaveAddr, sizeof(userPrompt_slaveAddr));
+				char userInput_slaveAddr[10] = { 0 };
+				// prompt_user(userPrompt_slaveAddr, sizeof(userPrompt_slaveAddr), userInput_slaveAddr, sizeof(userInput_slaveAddr) - 1);
+				uint8_t inputLen = wait_for_user_input(userInput_slaveAddr, 9);
+				// char* tempBuff[50] = { 0 };
+				// sprintf(tempBuff, "str: %02X len: %d\n", userInput_slaveAddr[inputLen-1], strlen(userInput_slaveAddr));
+				// usart_write_buffer_wait(&usart_instance, tempBuff, sizeof(tempBuff));
+				usart_write_buffer_wait(&usart_instance, "\n", sizeof("\n"));
+				set_slave_address(userInput_slaveAddr);
+
+				char userPrompt_destAddr[] = "Enter destination address: ";
+				usart_write_buffer_wait(&usart_instance, userPrompt_destAddr, sizeof(userPrompt_destAddr));
+				char userInput_destAddr[10] = { 0 };
+				inputLen = wait_for_user_input(userInput_destAddr, 9);
+				usart_write_buffer_wait(&usart_instance, "\n", sizeof("\n"));
+				set_destination_address(userInput_destAddr);
+
+				enable_master_usart_reader = true;
+				uart_show_activity = true;
 				uart_menu = UART_MENU_MAIN;
+				set_genie_mode(GENIE_MODE_REDIRECT);
 				break;
 
 			default:
 				usart_write_buffer_wait(&usart_instance, send_error, sizeof(send_error));
 				uart_menu = UART_MENU_MAIN;
+				// show uart activity again
+				uart_show_activity = true;
 				break;
 		}
-		// show uart activity again
-		uart_show_activity = true;
+	} else {
+
+		cmdLen++;
+		
+		if ((cmdLen < maxCmdLen) && (rx_buffer[0] != 0x0A)) {
+			usart_write_buffer_wait(&usart_instance,(uint8_t *)rx_buffer, 1);
+			return;
+		}
+
+		usart_handler(cmd_buffer, cmdLen);
+
+		memset(&cmd_buffer, 0, MAX_CMD_BUFFER_LENGTH);
+		cmdLen = 0;
+	}
+}
+
+uint8_t wait_for_user_input(char *inputBuffer, uint8_t bufferLen) {
+	// disable usart read interrupt
+	usart_disable_callback(&usart_instance, USART_CALLBACK_BUFFER_RECEIVED);
+
+	usart_write_buffer_wait(&usart_instance, "prompt: ", sizeof("prompt: "));
+
+	uint8_t inputIndex = 0;
+	uint16_t rx_data = 0;
+
+	while (inputIndex < bufferLen) {
+		if (usart_read_wait(&usart_instance, &rx_data) == STATUS_OK) {
+			if (rx_data == 0x0A) {
+				break;
+			} else if (rx_data != 0x0D) { // ignore carriage returns
+				inputBuffer[inputIndex] = rx_data;
+				uint8_t *tempBuffer[1] = { (uint8_t)rx_data };
+				usart_write_buffer_wait(&usart_instance, tempBuffer, 1);
+				inputIndex++;
+			}
+		}
 	}
 
-	// cmdLen++;
-	
-	// if ((cmdLen < MAX_CMD_BUFFER_LENGTH) && (rx_buffer[0] != 0x0A)) {
-	// 	return;
-	// }
+	// re-enable usart read callback
+	usart_enable_callback(&usart_instance, USART_CALLBACK_BUFFER_RECEIVED);
 
-	// usart_write_buffer_wait(&usart_instance,
-	// (uint8_t *)cmd_buffer, cmdLen);
+	return inputIndex;
+}
 
-	// memset(&cmd_buffer, 0, MAX_CMD_BUFFER_LENGTH);
-	cmdLen = 0;
+void prompt_user(char* prompt, uint8_t promptLen, char* received, uint8_t maxInputLen) {
+	usart_write_buffer_wait(&usart_instance, prompt, promptLen);
+	maxCmdLen = 5;
+	usart_handler = &new_slave_handler;
+}
+
+void new_slave_handler(uint8_t *newSlaveAddr, uint8_t strLen) {
+	const char *charPtr = (char *)newSlaveAddr;
+	set_slave_address(charPtr);
+	// usart_write_buffer_wait(&usart_instance, newSlaveAddr, strLen);
 }
 
 // enter new address to pose as
 // [in] newAddr - hex address as ascii chars
 // [out] status
-// STATUS_ERR_BAD_DATA
 uint8_t set_slave_address(char* newAddr) {
+
 	if (strlen(newAddr) > 2) {
 		// check for leading 0x
 		// if so, remove it
 		char prefix[3];
 		strncpy(prefix, newAddr, 2);
 		prefix[2] = 0;
-		char testBuff2[30] = {0};
-		sprintf(testBuff2, "prefix: %s\n", prefix);
-		usart_write_buffer_wait(&usart_instance, testBuff2, sizeof(testBuff2));
 
 		if (!strcmp("0x", prefix)) {
 			newAddr+=2;
-			char testBuff[30] = {0};
-			sprintf(testBuff, "new address: %s\n", newAddr);
-			usart_write_buffer_wait(&usart_instance, testBuff, sizeof(testBuff));
 		} else {
 			usart_write_buffer_wait(&usart_instance, "addr error\n", sizeof("addr error\n"));
 			return STATUS_ERR_BAD_DATA;
@@ -368,21 +445,66 @@ uint8_t set_slave_address(char* newAddr) {
 		// set slave address single
 		i2c_slave_instance.hw->I2CS.CTRLB.reg = SERCOM_I2CS_CTRLB_SMEN | I2C_SLAVE_ADDRESS_MODE_MASK;
 		// clear old i2c slave address settings
-		i2c_slave_instance.hw->I2CS.ADDR.reg = ~((0xFFFF << SERCOM_I2CS_ADDR_ADDR_Pos) | (0xFFFF << SERCOM_I2CS_ADDR_ADDRMASK_Pos));
+		i2c_slave_instance.hw->I2CS.ADDR.reg &= ~((0xFFFF << SERCOM_I2CS_ADDR_ADDR_Pos) | (0xFFFF << SERCOM_I2CS_ADDR_ADDRMASK_Pos));
 		// set new i2c slave address settings
-		i2c_slave_instance.hw->I2CS.ADDR.reg |= 0x01 << SERCOM_I2CS_ADDR_ADDR_Pos | 0x00 << SERCOM_I2CS_ADDR_ADDRMASK_Pos;
+		i2c_slave_instance.hw->I2CS.ADDR.reg |= newAddrInt << SERCOM_I2CS_ADDR_ADDR_Pos | 0x00 << SERCOM_I2CS_ADDR_ADDRMASK_Pos;
 		i2c_slave_enable(&i2c_slave_instance);
 		configure_i2c_slave_callbacks();
 		char* slaveAddrSetBuffer[50] = { 0 };
 		sprintf(slaveAddrSetBuffer, "|                           | [*] slave address set to: 0x%02X\n", newAddrInt);
 		usart_write_buffer_wait(&usart_instance, slaveAddrSetBuffer, sizeof(slaveAddrSetBuffer));
 	}
-	// i2c_hw->CTRLB.reg = SERCOM_I2CS_CTRLB_SMEN | config->address_mode;
 
-	// i2c_hw->ADDR.reg = config->address << SERCOM_I2CS_ADDR_ADDR_Pos |
-	// 		config->address_mask << SERCOM_I2CS_ADDR_ADDRMASK_Pos |
-	// 		config->ten_bit_address << SERCOM_I2CS_ADDR_TENBITEN_Pos |
-	// 		config->enable_general_call_address << SERCOM_I2CS_ADDR_GENCEN_Pos;
+	return STATUS_OK;
+}
+
+// enter new address to redirect packets to
+// [in] newAddr - hex address as ascii chars
+// [out] status
+uint8_t set_destination_address(char* newAddr) {
+
+	if (strlen(newAddr) > 2) {
+		// check for leading 0x
+		// if so, remove it
+		char prefix[3];
+		strncpy(prefix, newAddr, 2);
+		prefix[2] = 0;
+
+		if (!strcmp("0x", prefix)) {
+			newAddr+=2;
+		} else {
+			usart_write_buffer_wait(&usart_instance, "addr error\n", sizeof("addr error\n"));
+			return STATUS_ERR_BAD_DATA;
+		}
+	}
+
+	// check if valid address
+	// if so, convert address to int
+	uint16_t newAddrInt = 0;
+	uint8_t numDigits = strlen(newAddr);
+	if (numDigits) {
+		if (numDigits <= 2) {
+			for (uint8_t i=0; i<numDigits; i++) {
+				newAddrInt = strtol(newAddr, NULL, 16);
+				if (newAddrInt == 0) {
+					// not hex value
+					return STATUS_ERR_BAD_DATA;
+				}
+			}
+		} else {
+			// too many characters
+			return STATUS_ERR_BAD_DATA;
+		}
+	} else {
+		// no address
+		return STATUS_ERR_BAD_DATA;
+	}
+
+	// set new i2c destination address
+	redirect_address = newAddrInt;
+	char* destAddrSetBuffer[50] = { 0 };
+	sprintf(destAddrSetBuffer, "|                           | [*] destination address set to: 0x%02X\n", newAddrInt);
+	usart_write_buffer_wait(&usart_instance, destAddrSetBuffer, sizeof(destAddrSetBuffer));
 
 	return STATUS_OK;
 }
@@ -559,10 +681,18 @@ int main(void)
 
 	set_genie_mode(GENIE_MODE_PASSTHROUGH);
 
+	uint16_t *testBuffer[10] = { 0 };
+	uart_show_activity = true;
+
 	while (true) {
 		/* Infinite loop while waiting for I2C master interaction */
-		usart_read_buffer_job(&usart_instance,
+		if (enable_master_usart_reader) {
+			usart_read_buffer_job(&usart_instance,
 				(uint8_t *)rx_buffer, MAX_RX_BUFFER_LENGTH);
+		}
+		// uint8_t inputLen = wait_for_user_input(testBuffer, 9);
+
+		// usart_write_buffer_wait(&usart_instance, testBuffer, sizeof(inputLen));
 	}
 	
 }
