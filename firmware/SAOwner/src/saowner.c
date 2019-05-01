@@ -60,6 +60,7 @@ void configure_usart_callbacks(void);
 
 void set_genie_mode(uint8_t new_mode);
 uint8_t set_slave_address(char* newAddr);
+void prompt_user(char* prompt, uint8_t sizeOfPrompt, char* response);
 
 /* i2c packets */
 #define PACKET_BUFFER_SIZE 20
@@ -263,16 +264,21 @@ void usart_read_callback(struct usart_module *const usart_module)
 				break;
 
 			case '1':
-				// set new mode
-				// set_slave_address("0xAB");
+				// set passthrough mode
+				set_slave_address("0xFF"); // passthrough all
 				set_genie_mode(GENIE_MODE_PASSTHROUGH);
 				uart_menu = UART_MENU_MAIN;
 				break;
 
 			case '2':
-				// set new mode
-				// redirect address is currently hardcoded
+				; // set redirect mode
+				// char newSlaveAddr[MAX_CMD_BUFFER_LENGTH] = { 0 };
+				//prompt_user("Enter slave address (0xFF for any/all): ");
+				
 				// usart_write_buffer_wait(&usart_instance, "Original address (hex addres or all): ");
+				char* slaveAddrSetBuffer[50] = { 0 };
+				sprintf(slaveAddrSetBuffer, "|                           | [*] redirect address set to: 0x08\n");
+				usart_write_buffer_wait(&usart_instance, slaveAddrSetBuffer, sizeof(slaveAddrSetBuffer));
 				set_genie_mode(GENIE_MODE_REDIRECT);
 				uart_menu = UART_MENU_MAIN;
 				break;
@@ -299,10 +305,13 @@ void usart_read_callback(struct usart_module *const usart_module)
 	cmdLen = 0;
 }
 
+void prompt_user(char* prompt, uint8_t sizeOfPrompt, char* response) {
+	usart_write_buffer_wait(&usart_instance, prompt, sizeOfPrompt);
+}
+
 // enter new address to pose as
 // [in] newAddr - hex address as ascii chars
 // [out] status
-// STATUS_ERR_BAD_DATA
 uint8_t set_slave_address(char* newAddr) {
 	if (strlen(newAddr) > 2) {
 		// check for leading 0x
@@ -310,15 +319,9 @@ uint8_t set_slave_address(char* newAddr) {
 		char prefix[3];
 		strncpy(prefix, newAddr, 2);
 		prefix[2] = 0;
-		char testBuff2[30] = {0};
-		sprintf(testBuff2, "prefix: %s\n", prefix);
-		usart_write_buffer_wait(&usart_instance, testBuff2, sizeof(testBuff2));
 
 		if (!strcmp("0x", prefix)) {
 			newAddr+=2;
-			char testBuff[30] = {0};
-			sprintf(testBuff, "new address: %s\n", newAddr);
-			usart_write_buffer_wait(&usart_instance, testBuff, sizeof(testBuff));
 		} else {
 			usart_write_buffer_wait(&usart_instance, "addr error\n", sizeof("addr error\n"));
 			return STATUS_ERR_BAD_DATA;
@@ -368,7 +371,7 @@ uint8_t set_slave_address(char* newAddr) {
 		// set slave address single
 		i2c_slave_instance.hw->I2CS.CTRLB.reg = SERCOM_I2CS_CTRLB_SMEN | I2C_SLAVE_ADDRESS_MODE_MASK;
 		// clear old i2c slave address settings
-		i2c_slave_instance.hw->I2CS.ADDR.reg = ~((0xFFFF << SERCOM_I2CS_ADDR_ADDR_Pos) | (0xFFFF << SERCOM_I2CS_ADDR_ADDRMASK_Pos));
+		i2c_slave_instance.hw->I2CS.ADDR.reg &= ~((0xFFFF << SERCOM_I2CS_ADDR_ADDR_Pos) | (0xFFFF << SERCOM_I2CS_ADDR_ADDRMASK_Pos));
 		// set new i2c slave address settings
 		i2c_slave_instance.hw->I2CS.ADDR.reg |= 0x01 << SERCOM_I2CS_ADDR_ADDR_Pos | 0x00 << SERCOM_I2CS_ADDR_ADDRMASK_Pos;
 		i2c_slave_enable(&i2c_slave_instance);
@@ -377,12 +380,6 @@ uint8_t set_slave_address(char* newAddr) {
 		sprintf(slaveAddrSetBuffer, "|                           | [*] slave address set to: 0x%02X\n", newAddrInt);
 		usart_write_buffer_wait(&usart_instance, slaveAddrSetBuffer, sizeof(slaveAddrSetBuffer));
 	}
-	// i2c_hw->CTRLB.reg = SERCOM_I2CS_CTRLB_SMEN | config->address_mode;
-
-	// i2c_hw->ADDR.reg = config->address << SERCOM_I2CS_ADDR_ADDR_Pos |
-	// 		config->address_mask << SERCOM_I2CS_ADDR_ADDRMASK_Pos |
-	// 		config->ten_bit_address << SERCOM_I2CS_ADDR_TENBITEN_Pos |
-	// 		config->enable_general_call_address << SERCOM_I2CS_ADDR_GENCEN_Pos;
 
 	return STATUS_OK;
 }
@@ -399,11 +396,11 @@ void configure_i2c_slave(void)
 	i2c_slave_get_config_defaults(&config_i2c_slave);
 
 	/* Change address and address_mode */
-	config_i2c_slave.address      = 0x03;
-	config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_MASK;
-	// config_i2c_slave.address	  = 0xFF; // upper i2c address range
+	// config_i2c_slave.address      = 0x03;
+	// config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_MASK;
+	config_i2c_slave.address	  = 0xFF; // upper i2c address range
 	config_i2c_slave.address_mask = 0x00; // lower i2c address range
-	// config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_RANGE;
+	config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_RANGE;
 	config_i2c_slave.pinmux_pad0  = PINMUX_PA22C_SERCOM3_PAD0;
 	config_i2c_slave.pinmux_pad1  = PINMUX_PA23C_SERCOM3_PAD1;
 
