@@ -93,9 +93,17 @@ void system_board_init(void);
 
 /** \name I2C activity LED definitions
  *  @{ */
-#define LEDI2C_PIN                  PIN_PB10
+#define LEDI2C_PIN                  PIN_PB10 // SAOwner
+// #define LEDI2C_PIN                  PIN_PB22 // SAO Genie
 #define LEDI2C_ACTIVE               false
 #define LEDI2C_INACTIVE             !LED0_ACTIVE
+/** @} */
+
+/** \name I2C activity LED definitions
+ *  @{ */
+#define TEST_PIN                  PIN_PA18 // SAOwner
+#define TEST_ACTIVE               false
+#define TEST_INACTIVE             !TEST_ACTIVE
 /** @} */
 
 /** \name SW0 definitions

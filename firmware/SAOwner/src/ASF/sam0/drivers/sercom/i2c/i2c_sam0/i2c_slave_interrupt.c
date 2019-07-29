@@ -288,7 +288,7 @@ void _i2c_slave_interrupt_handler(
 		/* Check if last transfer is done - repeated start */
 		if (module->buffer_length != module->buffer_remaining &&
 				module->transfer_direction == I2C_TRANSFER_WRITE) {
-
+			// data sent from Master to Slave
 			module->status = STATUS_OK;
 			module->buffer_length = 0;
 			module->buffer_remaining = 0;
@@ -298,6 +298,7 @@ void _i2c_slave_interrupt_handler(
 			}
 		} else if (module->buffer_length != module->buffer_remaining &&
 				module->transfer_direction == I2C_TRANSFER_READ) {
+			// data sent from Slave to Master
 			module->status = STATUS_OK;
 			module->buffer_length = 0;
 			module->buffer_remaining = 0;

@@ -49,7 +49,8 @@ void i2c_write_request_callback(struct i2c_slave_module *const module);
 void i2c_slave_write_complete_callback(struct i2c_slave_module *const module);
 void usart_read_callback(struct usart_module *const usart_module);
 void usart_write_callback(struct usart_module *const usart_module);
-void i2c_write_complete_callback(struct i2c_master_module *const module);
+void i2c_master_write_complete_callback(struct i2c_master_module *const module);
+void i2c_master_read_complete_callback(struct i2c_master_module *const module);
 
 void configure_i2c_slave(void);
 void configure_i2c_slave_callbacks(void);
@@ -77,7 +78,7 @@ struct i2c_master_packet wr_packet_out;
 struct i2c_master_packet rd_packet_out;
 
 #define DATA_LENGTH 10
-static uint8_t write_buffer_in[DATA_LENGTH] = {0x00, 0x11, 0x02, 0x13, 0x04, 0x15, 0x06, 0x07, 0x08, 0x09};
+static uint8_t write_buffer_in[DATA_LENGTH] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
 static uint8_t read_buffer_in [DATA_LENGTH];
 
 static uint8_t write_buffer_out[DATA_LENGTH] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
@@ -103,6 +104,7 @@ uint8_t genie_mode = GENIE_MODE_OFF;
 uint8_t uart_menu = UART_MENU_MAIN;
 uint8_t uart_show_activity = true;
 uint8_t enable_master_usart_reader = true;
+uint8_t enable_master_usart_writer = true;
 
 /* Init device instance */
 struct i2c_slave_module i2c_slave_instance;
@@ -117,25 +119,47 @@ uint8_t cmd_buffer[MAX_CMD_BUFFER_LENGTH];
 
 uint16_t cmdLen = 0;
 
+/**
+ * Master requests data from slave
+ */
 void i2c_read_request_callback(struct i2c_slave_module *const module)
 {
 	uint8_t index = packet_in_index;
+
+	uint32_t addr = module->hw->I2CM.ADDR.reg;
+	uint32_t data = module->hw->I2CM.DATA.reg; // dest addr + read bit
+
+	uint16_t buffer[50] = { 0 };
+	sprintf(&buffer, "addr: %08X data: %08X\n", addr, data);
+	usart_write_buffer_wait(&usart_instance, buffer, sizeof(buffer));
+
+	rd_packet_out.address = module->hw->I2CS.DATA.reg >> 1;
+	rd_packet_out.data_length = DATA_LENGTH;
+	rd_packet_out.data = read_buffer_in;
+	rd_packet_out.high_speed = false;
+	rd_packet_out.ten_bit_address = false;
+
+	// /* Read buffer from master */
+	while (i2c_master_read_packet_job(&i2c_master_instance, &rd_packet_out) == STATUS_BUSY) {
+		;
+	}
+	
 	/* Init i2c packet */
-	// char temp[3];
-	// sprintf(temp, "%u\n", module->buffer_length);
-	// usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
 	packet_in.data_length = DATA_LENGTH;
-	packet_in.data        = write_buffer_in;
+	packet_in.data        = read_buffer_in;
 
 	/* Write buffer to master */
 	i2c_slave_write_packet_job(module, &packet_in);
 	
-	packet_in_index++;
-	if (packet_in_index >= PACKET_BUFFER_SIZE) {
-		packet_in_index = 0;
-	}
+	// packet_in_index++;
+	// if (packet_in_index >= PACKET_BUFFER_SIZE) {
+	// 	packet_in_index = 0;
+	// }
 }
 
+/**
+ * Master writes data to slave
+ */
 void i2c_write_request_callback(struct i2c_slave_module *const module)
 {	
 	uint8_t index = packet_in_index;
@@ -159,11 +183,19 @@ void i2c_write_request_callback(struct i2c_slave_module *const module)
 	}
 }
 
+/**
+ * Slave finishes sending data to master
+ */
 void i2c_slave_write_complete_callback(struct i2c_slave_module *const module) {
 	uint8_t temp[] = "test";
-	usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
+	port_pin_set_output_level(TEST_PIN, true);
+	port_pin_set_output_level(TEST_PIN, false);
+	// usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
 }
 
+/**
+ * Slave finishes receiving data from master
+ */
 void i2c_slave_read_complete_callback(struct i2c_slave_module *const module) {
 	// turn i2c LED on to show activity
 	if (genie_mode != GENIE_MODE_OFF) {
@@ -219,13 +251,32 @@ void i2c_slave_read_complete_callback(struct i2c_slave_module *const module) {
 		
 		// toggle LED to show activity
 		port_pin_set_output_level(LEDI2C_PIN, false);
+		port_pin_set_output_level(TEST_PIN, false);
 	}
 }
 
-void i2c_write_complete_callback(struct i2c_master_module *const module)
+void i2c_master_write_complete_callback(struct i2c_master_module *const module)
 {
 	/* Initiate new packet read */
+	uint8_t temp[] = "test3";
+	usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
 	i2c_master_read_packet_job(&i2c_master_instance,&rd_packet_out);
+}
+
+void i2c_master_read_complete_callback(struct i2c_master_module *const module)
+{
+	/* Initiate new packet read */
+	uint8_t temp[] = "test4\n";
+	usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
+	// i2c_master_write_packet_job(&i2c_master_instance,&rd_packet_out);
+	uint16_t buffer[50] = { 0 };
+	uint16_t *pos = buffer;
+	pos += sprintf(pos, "length: %d data: ", rd_packet_out.data_length);	
+	for (uint8_t i=0; i<rd_packet_out.data_length; i++) {
+		pos += sprintf(pos, "%c", rd_packet_out.data[i]);
+	}
+	sprintf(pos, "\n");
+	usart_write_buffer_wait(&usart_instance, buffer, sizeof(buffer));
 }
 
 void usart_read_callback(struct usart_module *const usart_module)
@@ -346,7 +397,7 @@ uint8_t wait_for_user_input(char *inputBuffer, uint8_t bufferLen) {
 	// disable usart read interrupt
 	usart_disable_callback(&usart_instance, USART_CALLBACK_BUFFER_RECEIVED);
 
-	usart_write_buffer_wait(&usart_instance, "prompt: ", sizeof("prompt: "));
+	// usart_write_buffer_wait(&usart_instance, "prompt: ", sizeof("prompt: "));
 
 	uint8_t inputIndex = 0;
 	uint16_t rx_data = 0;
@@ -521,11 +572,11 @@ void configure_i2c_slave(void)
 	i2c_slave_get_config_defaults(&config_i2c_slave);
 
 	/* Change address and address_mode */
-	config_i2c_slave.address      = 0x03;
-	config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_MASK;
-	// config_i2c_slave.address	  = 0xFF; // upper i2c address range
+	// config_i2c_slave.address      = 0x78;
+	// config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_MASK;
+	config_i2c_slave.address	  = 0xFF; // upper i2c address range
 	config_i2c_slave.address_mask = 0x00; // lower i2c address range
-	// config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_RANGE;
+	config_i2c_slave.address_mode = I2C_SLAVE_ADDRESS_MODE_RANGE;
 	config_i2c_slave.pinmux_pad0  = PINMUX_PA22C_SERCOM3_PAD0;
 	config_i2c_slave.pinmux_pad1  = PINMUX_PA23C_SERCOM3_PAD1;
 
@@ -590,8 +641,7 @@ void configure_i2c_master(void)
 	config_i2c_master.pinmux_pad1    = PINMUX_PA17C_SERCOM1_PAD1;
 
 	/* Initialize and enable device with config */
-	while(i2c_master_init(&i2c_master_instance, SERCOM1, &config_i2c_master)     \
-	!= STATUS_OK);
+	while(i2c_master_init(&i2c_master_instance, SERCOM1, &config_i2c_master) != STATUS_OK);
 
 	i2c_master_enable(&i2c_master_instance);
 }
@@ -599,9 +649,11 @@ void configure_i2c_master(void)
 void configure_i2c_master_callbacks(void)
 {
 	/* Register callback function. */
-	i2c_master_register_callback(&i2c_master_instance, i2c_write_complete_callback, I2C_MASTER_CALLBACK_WRITE_COMPLETE);
+	i2c_master_register_callback(&i2c_master_instance, i2c_master_write_complete_callback, I2C_MASTER_CALLBACK_WRITE_COMPLETE);
+	i2c_master_register_callback(&i2c_master_instance, i2c_master_read_complete_callback, I2C_MASTER_CALLBACK_READ_COMPLETE);
 
 	i2c_master_enable_callback(&i2c_master_instance, I2C_MASTER_CALLBACK_WRITE_COMPLETE);
+	i2c_master_enable_callback(&i2c_master_instance, I2C_MASTER_CALLBACK_READ_COMPLETE);
 }
 
 void configure_usart_callbacks(void)
@@ -623,7 +675,9 @@ static void config_led(void)
 
 	pin_conf.direction  = PORT_PIN_DIR_OUTPUT;
 	port_pin_set_config(LEDI2C_PIN, &pin_conf);
+	port_pin_set_config(TEST_PIN, &pin_conf);
 	port_pin_set_output_level(LEDI2C_PIN, false);
+	port_pin_set_output_level(TEST_PIN, false);
 }
 
 void set_genie_mode(uint8_t new_mode) {
