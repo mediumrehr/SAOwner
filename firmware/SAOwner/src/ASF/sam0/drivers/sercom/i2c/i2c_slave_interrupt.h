@@ -48,6 +48,7 @@
 #define I2C_SLAVE_INTERRUPT_H_INCLUDED
 
 #include "i2c_slave.h"
+#include "i2c_master_interrupt.h"
 
 #ifdef __cplusplus
 extern "C" {

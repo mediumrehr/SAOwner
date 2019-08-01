@@ -45,6 +45,7 @@
  */
 
 #include "i2c_slave_interrupt.h"
+#include "../../../../saowner.h"
 
 /**
  * \brief Enables sending of NACK on address match
@@ -112,8 +113,13 @@ static void _i2c_slave_write(
 {
 	SercomI2cs *const i2c_hw = &(module->hw->I2CS);
 
+	test(module->buffer, 1);
+	test("\n", 1);
+
 	/* Write byte from buffer to master */
 	i2c_hw->DATA.reg = *(module->buffer++);
+
+	
 
 	/*Decrement remaining buffer length */
 	module->buffer_remaining--;

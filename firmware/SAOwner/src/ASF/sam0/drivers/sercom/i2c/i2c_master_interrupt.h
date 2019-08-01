@@ -48,6 +48,9 @@
 #define I2C_MASTER_INTERRUPT_H_INCLUDED
 
 #include "i2c_master.h"
+#include "i2c_slave_interrupt.h"
+
+static uint8_t send_buffer[1];
 
 #ifdef __cplusplus
 extern "C" {

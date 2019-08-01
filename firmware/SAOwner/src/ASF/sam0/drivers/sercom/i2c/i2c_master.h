@@ -63,6 +63,8 @@ extern "C" {
 #  define PINMUX_DEFAULT 0
 #endif
 
+extern struct i2c_slave_module i2c_slave_instance;
+
 /**
  * \addtogroup asfdoc_sam0_sercom_i2c_group
  *

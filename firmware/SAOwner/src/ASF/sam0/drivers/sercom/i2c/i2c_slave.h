@@ -109,6 +109,8 @@ extern "C" {
 
 /** @} */
 
+extern struct i2c_master_module i2c_master_instance;
+
 /**
  * \brief I<SUP>2</SUP>C slave packet for read/write
  *

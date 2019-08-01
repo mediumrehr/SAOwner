@@ -39,9 +39,10 @@
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
 
-#include <asf.h>
-#include <stdio.h>
-#include <string.h>
+// #include <asf.h>
+// #include <stdio.h>
+// #include <string.h>
+#include "saowner.h"
 
 void i2c_read_request_callback(struct i2c_slave_module *const module);
 void i2c_slave_read_complete_callback(struct i2c_slave_module *const module);
@@ -149,12 +150,22 @@ void i2c_read_request_callback(struct i2c_slave_module *const module)
 	packet_in.data        = read_buffer_in;
 
 	/* Write buffer to master */
-	i2c_slave_write_packet_job(module, &packet_in);
+	// i2c_slave_write_packet_job(module, &packet_in);
 	
 	// packet_in_index++;
 	// if (packet_in_index >= PACKET_BUFFER_SIZE) {
 	// 	packet_in_index = 0;
 	// }
+}
+
+extern void test(uint8_t *printStr, uint8_t strLen) {
+	// uint8_t temp[] = "@@@ extern func test @@@";
+	uint16_t buffer[50] = { 0 };
+	uint16_t *pos = buffer;
+	for (uint8_t i=0; i<strLen; i++) {
+		pos += sprintf(pos, "%c", printStr[i]);
+	}
+	usart_write_buffer_wait(&usart_instance, buffer, strLen);
 }
 
 /**
@@ -250,7 +261,7 @@ void i2c_slave_read_complete_callback(struct i2c_slave_module *const module) {
 		}
 		
 		// toggle LED to show activity
-		port_pin_set_output_level(LEDI2C_PIN, false);
+		// port_pin_set_output_level(LEDI2C_PIN, false);
 		port_pin_set_output_level(TEST_PIN, false);
 	}
 }
@@ -674,10 +685,22 @@ static void config_led(void)
 	port_get_config_defaults(&pin_conf);
 
 	pin_conf.direction  = PORT_PIN_DIR_OUTPUT;
-	port_pin_set_config(LEDI2C_PIN, &pin_conf);
-	port_pin_set_config(TEST_PIN, &pin_conf);
-	port_pin_set_output_level(LEDI2C_PIN, false);
-	port_pin_set_output_level(TEST_PIN, false);
+	port_pin_set_config(LEDI2C_PIN, &pin_conf); // boot LED
+	port_pin_set_config(PIN_PB11, &pin_conf); // i2c LED
+	port_pin_set_config(PIN_PA12, &pin_conf); // uart LED
+	port_pin_set_config(PIN_PA13, &pin_conf); // other LED
+	port_pin_set_config(PIN_PA18, &pin_conf); // boot LED
+	port_pin_set_config(PIN_PA19, &pin_conf); // i2c LED
+	port_pin_set_config(PIN_PA20, &pin_conf); // uart LED
+	port_pin_set_config(PIN_PA21, &pin_conf); // other LED
+	port_pin_set_output_level(LEDI2C_PIN, true);
+	port_pin_set_output_level(PIN_PB11, true);
+	port_pin_set_output_level(PIN_PA12, true);
+	port_pin_set_output_level(PIN_PA13, true);
+	port_pin_set_output_level(PIN_PA18, true);
+	port_pin_set_output_level(PIN_PA19, true);
+	port_pin_set_output_level(PIN_PA20, true);
+	port_pin_set_output_level(PIN_PA21, true);
 }
 
 void set_genie_mode(uint8_t new_mode) {
