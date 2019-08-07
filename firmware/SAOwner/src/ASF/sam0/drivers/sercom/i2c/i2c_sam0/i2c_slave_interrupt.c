@@ -113,8 +113,8 @@ static void _i2c_slave_write(
 {
 	SercomI2cs *const i2c_hw = &(module->hw->I2CS);
 
-	test(module->buffer, 1);
-	test("\n", 1);
+	// test(module->buffer, 1);
+	// test("\n", 1);
 
 	/* Write byte from buffer to master */
 	i2c_hw->DATA.reg = *(module->buffer++);
@@ -273,12 +273,9 @@ enum status_code i2c_slave_write_packet_job(
  *
  * \param[in] instance Sercom instance that triggered the interrupt
  */
-void _i2c_slave_interrupt_handler(
-		uint8_t instance)
-{
+void _i2c_slave_interrupt_handler(uint8_t instance) {
 	/* Get software module for callback handling. */
-	struct i2c_slave_module *module =
-			(struct i2c_slave_module*)_sercom_instances[instance];
+	struct i2c_slave_module *module = (struct i2c_slave_module*)_sercom_instances[instance];
 
 	Assert(module);
 
@@ -329,6 +326,9 @@ void _i2c_slave_interrupt_handler(
 		} else if (i2c_hw->STATUS.reg & SERCOM_I2CS_STATUS_DIR) {
 			/* Set transfer direction in module instance */
 			module->transfer_direction = I2C_TRANSFER_READ;
+
+			// !!! start read call to slave
+
 
 			/* Read request from master */
 			if (callback_mask & (1 << I2C_SLAVE_CALLBACK_READ_REQUEST)) {
@@ -386,6 +386,8 @@ void _i2c_slave_interrupt_handler(
 			module->buffer_length = 0;
 			module->buffer_remaining = 0;
 
+			// !!! send stop to slave
+
 			/* Call appropriate callback if enabled and registered */
 			if ((callback_mask & (1 << I2C_SLAVE_CALLBACK_READ_COMPLETE))
 					&& (module->transfer_direction == I2C_TRANSFER_WRITE)) {
@@ -396,7 +398,7 @@ void _i2c_slave_interrupt_handler(
 				/* Write to master complete */
 				module->callbacks[I2C_SLAVE_CALLBACK_WRITE_COMPLETE](module);
 			}
-					}
+		}
 	} else if (i2c_hw->INTFLAG.reg & SERCOM_I2CS_INTFLAG_DRDY) {
 		/* Check if buffer is full, or NACK from master */
 		if (module->buffer_remaining <= 0 ||
@@ -435,6 +437,10 @@ void _i2c_slave_interrupt_handler(
 		/* Continue buffer write/read */
 		} else if (module->buffer_length > 0 && module->buffer_remaining > 0) {
 			/* Call function based on transfer direction */
+
+			// !!! read another byte
+
+
 			if (module->transfer_direction == I2C_TRANSFER_WRITE) {
 				_i2c_slave_read(module);
 			} else {

@@ -75,12 +75,13 @@ uint8_t wait_for_user_input(char *inputBuffer, uint8_t bufferLen);
 uint8_t packet_in_index = 0;
 static uint8_t dest_addr = 0;
 static struct i2c_slave_packet packet_in;
+static struct i2c_slave_packet packet_badge_read_rq;
 struct i2c_master_packet wr_packet_out;
 struct i2c_master_packet rd_packet_out;
 
-#define DATA_LENGTH 10
+#define DATA_LENGTH 50
 static uint8_t write_buffer_in[DATA_LENGTH] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
-static uint8_t read_buffer_in [DATA_LENGTH];
+uint8_t read_buffer_in [DATA_LENGTH];
 
 static uint8_t write_buffer_out[DATA_LENGTH] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 static uint8_t write_buffer_out_reversed[DATA_LENGTH] = {0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00};
@@ -133,35 +134,28 @@ void i2c_read_request_callback(struct i2c_slave_module *const module)
 	uint16_t buffer[50] = { 0 };
 	sprintf(&buffer, "addr: %08X data: %08X\n", addr, data);
 	usart_write_buffer_wait(&usart_instance, buffer, sizeof(buffer));
-
+			
 	rd_packet_out.address = module->hw->I2CS.DATA.reg >> 1;
 	rd_packet_out.data_length = DATA_LENGTH;
-	rd_packet_out.data = read_buffer_in;
+	rd_packet_out.data = read_buffer_out;
 	rd_packet_out.high_speed = false;
 	rd_packet_out.ten_bit_address = false;
-
-	// /* Read buffer from master */
-	while (i2c_master_read_packet_job(&i2c_master_instance, &rd_packet_out) == STATUS_BUSY) {
-		;
-	}
+	i2c_master_read_packet_wait(&i2c_master_instance, &rd_packet_out);
+	test(read_buffer_out, 10);
+	test("\n", 1);
 	
 	/* Init i2c packet */
-	packet_in.data_length = DATA_LENGTH;
-	packet_in.data        = read_buffer_in;
+	packet_badge_read_rq.data_length = DATA_LENGTH;
+	packet_badge_read_rq.data        = read_buffer_out;
 
 	/* Write buffer to master */
-	// i2c_slave_write_packet_job(module, &packet_in);
-	
-	// packet_in_index++;
-	// if (packet_in_index >= PACKET_BUFFER_SIZE) {
-	// 	packet_in_index = 0;
-	// }
+	i2c_slave_write_packet_job(module, &packet_badge_read_rq);
 }
 
 extern void test(uint8_t *printStr, uint8_t strLen) {
 	// uint8_t temp[] = "@@@ extern func test @@@";
-	uint16_t buffer[50] = { 0 };
-	uint16_t *pos = buffer;
+	uint8_t buffer[50] = { 0 };
+	uint8_t *pos = buffer;
 	for (uint8_t i=0; i<strLen; i++) {
 		pos += sprintf(pos, "%c", printStr[i]);
 	}
@@ -173,7 +167,6 @@ extern void test(uint8_t *printStr, uint8_t strLen) {
  */
 void i2c_write_request_callback(struct i2c_slave_module *const module)
 {	
-	uint8_t index = packet_in_index;
 	// char temp[10];
 	// sprintf(temp, "len: %u\n", (unsigned int)module->buffer_remaining);
 	// usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
@@ -187,11 +180,6 @@ void i2c_write_request_callback(struct i2c_slave_module *const module)
 	while (i2c_slave_read_packet_job(module, &packet_in) == STATUS_BUSY) {
 		;
 	}
-	
-	packet_in_index++;
-	if (packet_in_index >= PACKET_BUFFER_SIZE) {
-		packet_in_index = 0;
-	}
 }
 
 /**
@@ -199,8 +187,8 @@ void i2c_write_request_callback(struct i2c_slave_module *const module)
  */
 void i2c_slave_write_complete_callback(struct i2c_slave_module *const module) {
 	uint8_t temp[] = "test";
-	port_pin_set_output_level(TEST_PIN, true);
-	port_pin_set_output_level(TEST_PIN, false);
+	// port_pin_set_output_level(TEST_PIN, true);
+	// port_pin_set_output_level(TEST_PIN, false);
 	// usart_write_buffer_wait(&usart_instance, temp, sizeof(temp));
 }
 
@@ -359,7 +347,7 @@ void usart_read_callback(struct usart_module *const usart_module)
 		
 				char userPrompt_slaveAddr[] = "Enter slave address (0xFF for any/all): ";
 				usart_write_buffer_wait(&usart_instance, userPrompt_slaveAddr, sizeof(userPrompt_slaveAddr));
-				char userInput_slaveAddr[10] = { 0 };
+				char userInput_slaveAddr[50] = { 0 };
 				// prompt_user(userPrompt_slaveAddr, sizeof(userPrompt_slaveAddr), userInput_slaveAddr, sizeof(userInput_slaveAddr) - 1);
 				uint8_t inputLen = wait_for_user_input(userInput_slaveAddr, 9);
 				// char* tempBuff[50] = { 0 };
@@ -370,7 +358,7 @@ void usart_read_callback(struct usart_module *const usart_module)
 
 				char userPrompt_destAddr[] = "Enter destination address: ";
 				usart_write_buffer_wait(&usart_instance, userPrompt_destAddr, sizeof(userPrompt_destAddr));
-				char userInput_destAddr[10] = { 0 };
+				char userInput_destAddr[50] = { 0 };
 				inputLen = wait_for_user_input(userInput_destAddr, 9);
 				usart_write_buffer_wait(&usart_instance, "\n", sizeof("\n"));
 				set_destination_address(userInput_destAddr);
@@ -758,7 +746,7 @@ int main(void)
 
 	set_genie_mode(GENIE_MODE_PASSTHROUGH);
 
-	uint16_t *testBuffer[10] = { 0 };
+	uint16_t *testBuffer[50] = { 0 };
 	uart_show_activity = true;
 
 	while (true) {

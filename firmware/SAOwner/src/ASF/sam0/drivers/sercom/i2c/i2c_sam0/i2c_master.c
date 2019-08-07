@@ -1010,7 +1010,7 @@ enum status_code i2c_master_read_byte(
   	SercomI2cm *const i2c_module = &(module->hw->I2CM);
 
 	i2c_module->CTRLB.reg &= ~SERCOM_I2CM_CTRLB_ACKACT;
-	/* Write byte to slave. */
+	/* Read byte to slave. */
 	_i2c_master_wait_for_sync(module);
 	*byte = i2c_module->DATA.reg;
 	/* Wait for response. */

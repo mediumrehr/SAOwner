@@ -97,6 +97,7 @@ static void _i2c_master_read(
 			_i2c_master_wait_for_sync(module);
 			i2c_module->CTRLB.reg |= SERCOM_I2CM_CTRLB_CMD(3);
 		}
+		
 	}
 	
 	/* Read byte from slave and put in buffer */
@@ -109,7 +110,7 @@ static void _i2c_master_read(
 	send_buffer[0] = i2c_module->DATA.reg;
 	packet_to_master.data = send_buffer;
 
-	test(send_buffer, 1);
+	// test(send_buffer, 1);
 	// test("\n", 1);
 
 	/* Write buffer to master */
@@ -714,16 +715,18 @@ void _i2c_master_interrupt_handler(
 	Assert(module);
 
 	SercomI2cm *const i2c_module = &(module->hw->I2CM);
-	bool sclsm_flag = i2c_module->CTRLA.bit.SCLSM;
+	bool sclsm_flag = i2c_module->CTRLA.bit.SCLSM; // SCL Clock Stretch Mode
 
 	/* Combine callback registered and enabled masks */
-	uint8_t callback_mask = module->enabled_callback;
-	callback_mask &= module->registered_callback;
+	uint8_t callback_mask = module->enabled_callback; // what callbacks are enabled
+	callback_mask &= module->registered_callback; // from those, which are registered (hopefully all of them)
 
 	/* Check if the module should respond to address ack */
+	/* initial master/slave handshake */
 	if ((module->buffer_length <= 0) && (module->buffer_remaining > 0)) {
 		/* Call function for address response */
 		_i2c_master_async_address_response(module);
+
 
 	/* Check if buffer write is done */
 	} else if ((module->buffer_length > 0) && (module->buffer_remaining <= 0) &&
